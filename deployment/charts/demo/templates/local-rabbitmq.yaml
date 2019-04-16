@@ -1,0 +1,19 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Values.localMachine.rabbitServiceName }}
+spec:
+  ports:
+  - protocol: TCP
+    port: 5672
+    targetPort: 5672
+---
+kind: Endpoints
+apiVersion: v1
+metadata:
+  name: {{ .Values.localMachine.rabbitServiceName }}
+subsets:
+  - addresses:
+      - ip: {{ .Values.localMachine.ip }}
+    ports:
+      - port: 5672

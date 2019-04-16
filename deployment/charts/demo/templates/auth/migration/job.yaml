@@ -1,0 +1,59 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ include "auth.fullname" . }}-migration-job"
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-delete-policy": hook-succeeded
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    app: {{ template "auth.name" . }}
+spec:
+  template:
+    metadata: 
+      name: "{{ include "auth.fullname" . }}-migration-job"
+      labels:
+        app: {{ include "auth.fullname" . }}-migration-job
+        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    spec:
+      restartPolicy: Never
+      containers: 
+        - name: {{ include "auth.fullname" . }}-migration-job
+          image: "{{ .Values.auth.image.registry }}/{{ .Values.auth.image.migrationRepository }}:{{ .Values.auth.image.tag }}"
+          imagePullPolicy: {{ .Values.auth.image.pullPolicy }}
+          command: ["dotnet", "ef", "database", "update", "--context", "IdentityDbContext"]
+          env:
+            - name: ENVIRONMENT
+              value: "Production"
+            - name: PATH
+              value: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            - name: Postgres__Host
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "auth.fullname" . }}-secrets
+                  key: PostgresHost
+            - name: Postgres__Port
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "auth.fullname" . }}-secrets
+                  key: PostgresPort
+            - name: Postgres__Database
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "auth.fullname" . }}-secrets
+                  key: PostgresDatabase
+            - name: Postgres__Username
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "auth.fullname" . }}-secrets
+                  key: PostgresUsername
+            - name: Postgres__Password
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "auth.fullname" . }}-secrets
+                  key: PostgresPassword
+            - name: ConnectionStrings__IdentityDbContext
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "auth.fullname" . }}-secrets
+                  key: IdentityDbContext

@@ -1,0 +1,16 @@
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: "{{ include "auth.fullname" . }}-hpa"
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1beta1
+    kind: Deployment
+    name: {{ include "auth.fullname" . }}
+  minReplicas: {{ .Values.auth.hpa.minReplicaCount }}
+  maxReplicas: {{ .Values.auth.hpa.maxReplicaCount }}
+{{- with .Values.auth.metrics }}
+  metrics:
+  {{- toYaml . | nindent 8 }}
+{{- end }}
+  

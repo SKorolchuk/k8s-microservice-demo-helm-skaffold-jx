@@ -1,0 +1,94 @@
+{{- if semverCompare "^1.9-0" .Capabilities.KubeVersion.GitVersion }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "auth.fullname" . }}
+  labels:
+    app: {{ include "auth.fullname" . }}
+    app.kubernetes.io/name: {{ include "auth.name" . }}
+    helm.sh/chart: {{ include "demo.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    ingress.type: {{ .Values.auth.ingress.type }}
+spec:
+  replicas: {{ .Values.auth.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "auth.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "auth.fullname" . }}
+        app.kubernetes.io/name: {{ include "auth.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ template "auth.fullname" . }}
+      {{- else }}
+      serviceAccountName: default
+      {{- end }}
+      containers:
+        - name: {{ include "auth.name" . }}
+          image: "{{ .Values.auth.image.registry }}/{{ .Values.auth.image.repository }}:{{ .Values.auth.image.tag }}"
+          imagePullPolicy: {{ .Values.auth.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.auth.containerPort }}
+              protocol: TCP
+          env:
+            - name: PATH
+              value: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            - name: ENVIRONMENT
+              value: "Production"
+            - name: ASPNETCORE_URLS
+              value: "http://+:80"
+            - name: JwtIssuerOptions__Issuer
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "auth.fullname" . }}
+                  key: jwt.issuer
+            - name: JwtIssuerOptions__Audience
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "auth.fullname" . }}
+                  key: jwt.audience
+            - name: JwtIssuerOptions__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "auth.fullname" . }}-secrets
+                  key: SecretKey
+            - name: ConnectionStrings__IdentityDbContext
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "auth.fullname" . }}-secrets
+                  key: IdentityDbContext
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+              initialDelaySeconds: 60
+              periodSeconds: 10
+              timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: http
+              initialDelaySeconds: 45
+              periodSeconds: 10
+              timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.auth.resources | nindent 12 }}
+      {{- with .Values.auth.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.auth.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.auth.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+{{- end }}

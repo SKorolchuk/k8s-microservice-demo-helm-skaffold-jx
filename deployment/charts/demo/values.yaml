@@ -1,0 +1,148 @@
+# Default values for demo.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+auth:
+  name: auth
+  containerPort: 80
+  ingress:
+    type: traefik
+    hosts:
+      - auth.demo-app.com
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: traefik
+    path: /
+    tls: []
+      # - secretName: chart-example-tls
+      #   hosts:
+      #     - chart-example.local
+  secretKey: "iNivDmHLpUA223sqsfhqGbMRdRj1PVkH"
+  accountDBName: "AuthDB"
+  jwt:
+    audience: "webApi"
+    issuer: "http://auth.demo-app.com/"
+  production: true
+  service:
+    port: 80
+    type: ClusterIP
+    labels: {}
+    annotations:
+      traefik.ingress.kubernetes.io/affinity: true
+      traefik.ingress.kubernetes.io/load-balancer-method: drr
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      targetAverageUtilization: 30
+  resources:
+    limits:
+      cpu: "100m"
+      memory: "100Mi"
+    requests:
+      cpu: "100m"
+      memory: "96Mi"
+  replicaCount: 2
+  postgres:
+    service: "demo-postgresql"
+    port: 5432
+  hpa:
+    minReplicaCount: 2
+    maxReplicaCount: 10
+  image:
+    registry: WORKDESK:5000
+    repository: auth
+    migrationRepository: auth-migration
+    tag: stable
+    pullPolicy: Always
+
+hpa:
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      targetAverageUtilization: 30
+
+rbac:
+  enabled: true
+
+dependencies:
+  enabled: false
+
+fullnameOverride: k8s-demo
+replicaCount: 1
+image:
+  repository: WORKDESK:5000/k8s-demo
+  tag: stable
+  pullPolicy: Always
+imagePullSecrets: []
+  # Optionally specify an array of imagePullSecrets.
+  # Secrets must be manually created in the namespace.
+  # ref: https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod
+  #
+  # This uses credentials from secret "myRegistryKeySecretName".
+  # - name: myRegistryKeySecretName
+service:
+  type: ClusterIP
+  port: 80
+  annotations:
+    traefik.ingress.kubernetes.io/affinity: "true"
+    traefik.ingress.kubernetes.io/load-balancer-method: drr
+
+probes:
+  enabled: true
+
+localMachine:
+  redisServiceName: local-redis
+  rabbitServiceName: local-rabbitmq
+  ip: WORKDESK
+
+postgresql:
+  enabled: true
+  postgresUsername: postgres
+  postgresPassword: postgres
+postgresUsername: postgres
+postgresPassword: postgres
+
+ingress:
+  type: traefik
+  hosts:
+  - demo-app.com
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  path: /
+  # hosts:
+  #   - chart-example.local
+  tls: []
+    # - secretName: chart-example-tls
+    #   hosts:
+    #     - chart-example.local
+secrets: {}
+  # Optionally specify a set of secret objects whose values
+  # will be injected as environment variables by default.
+  # You should add this section to a file like secrets.yaml
+  # that is explicitly NOT committed to source code control
+  # and then include it as part of your helm install step.
+  # ref: https://kubernetes.io/docs/concepts/configuration/secret/
+  #
+  # This creates a secret "mysecret" and injects "mypassword"
+  # as the environment variable mysecret_mypassword=password.
+  # mysecret:
+  #   mypassword: password
+resources:
+  limits:
+    cpu: "100m"
+    memory: "100Mi"
+  requests:
+    cpu: "80m"
+    memory: "80Mi"
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

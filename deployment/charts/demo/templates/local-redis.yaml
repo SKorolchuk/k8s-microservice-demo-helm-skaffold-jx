@@ -1,0 +1,19 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Values.localMachine.redisServiceName }}
+spec:
+  ports:
+  - protocol: TCP
+    port: 6379
+    targetPort: 6379
+---
+kind: Endpoints
+apiVersion: v1
+metadata:
+  name: {{ .Values.localMachine.redisServiceName }}
+subsets:
+  - addresses:
+      - ip: {{ .Values.localMachine.ip }}
+    ports:
+      - port: 6379

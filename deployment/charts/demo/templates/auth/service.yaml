@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "auth.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "auth.name" . }}
+    helm.sh/chart: {{ include "demo.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app: {{ include "auth.fullname" . }}
+    chart: {{ template "demo.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  {{- if .Values.auth.service }}
+  {{- range $key, $value := .Values.auth.service.labels }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  {{- end }}
+{{- with .Values.service.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+  type: {{ .Values.auth.service.type }}
+  ports:
+    - port: {{ .Values.auth.service.port }}
+      targetPort: {{ .Values.auth.containerPort }}
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ include "auth.fullname" . }}
+    app.kubernetes.io/name: {{ include "auth.name" . }}
